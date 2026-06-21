@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>RadiaStore - Réplicas Físicas VALORANT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700&family=Inter:wght@400;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --valo-red: #ff4655;
+            --valo-red-dark: #cc3743;
+            --valo-dark: #0f1115;
+            --valo-gray: #1f2326;
+            --valo-light: #ece8e1;
+            --valo-accent: #00ffcc;
+        }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--valo-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--valo-red); border-radius: 0px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--valo-red-dark); }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--valo-light);
+            margin: 0;
+            padding: 0;
+            background-color: var(--valo-dark);
+            background-image: 
+                linear-gradient(rgba(15, 17, 21, 0.92), rgba(15, 17, 21, 0.95)), 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,70,85,0.03) 2px, rgba(255,70,85,0.03) 4px),
+                url('https://mir-s3-cdn-cf.behance.net/project_modules/1400/47b184166239615.6414b83655fe1.gif');
+            background-size: cover, 100% 4px, cover;
+            background-attachment: fixed;
+            background-position: center;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            cursor: crosshair; 
+        }
+
+        /* --- PARTÍCULAS --- */
+        #particles-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 1; overflow: hidden; }
+        .particle { position: absolute; bottom: -10px; width: 3px; height: 3px; background-color: #ffb700; box-shadow: 0 0 10px #ffb700, 0 0 20px #ff4655; border-radius: 50%; opacity: 0; animation: floatUp linear forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 0; } 20% { opacity: 0.8; } 100% { transform: translateY(-100vh) scale(0); opacity: 0; } }
+        
+        /* --- SPLASH SCREEN --- */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--valo-dark); background-image: radial-gradient(circle, #2a1a1c 0%, #0f1115 100%); z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+        .splash-logo { font-family: 'Bebas Neue', sans-serif; font-size: 120px; color: var(--valo-light); letter-spacing: 10px; margin: 0; text-shadow: 0 0 20px rgba(255, 70, 85, 0.5); animation: pulseGlow 2s infinite; }
+        .splash-logo span { color: var(--valo-red); }
+        .btn-ingresar { margin-top: 40px; background: transparent; color: #fff; border: 2px solid var(--valo-red); padding: 15px 60px; font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: bold; letter-spacing: 4px; text-transform: uppercase; cursor: pointer; transition: 0.3s; position: relative; overflow: hidden; }
+        .btn-ingresar::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent); transform: skewX(-20deg); transition: 0.5s; }
+        .btn-ingresar:hover::before { left: 150%; }
+        .btn-ingresar:hover { background: var(--valo-red); box-shadow: 0 0 30px rgba(255, 70, 85, 0.8); transform: scale(1.05); }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseGlow { 0% { text-shadow: 0 0 10px rgba(255, 70, 85, 0.3); } 50% { text-shadow: 0 0 30px rgba(255, 70, 85, 0.8); } 100% { text-shadow: 0 0 10px rgba(255, 70, 85, 0.3); } }
+        @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-15px) rotate(2deg); filter: drop-shadow(0 15px 10px rgba(0,0,0,0.4)); } 100% { transform: translateY(0px) rotate(0deg); } }
+        @keyframes glitch { 0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); } 20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -2px); } 40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); } 60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); } 80% { clip-path: inset(10% 0 70% 0); transform: translate(-2px, 2px); } 100% { clip-path: inset(30% 0 50% 0); transform: translate(0); } }
+
+        /* --- MENÚ LATERAL DE INVENTARIO (CARRITO) --- */
+        .cart-sidebar {
+            position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
+            background: rgba(15, 17, 21, 0.98); backdrop-filter: blur(15px);
+            border-left: 2px solid var(--valo-red); z-index: 10000;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+        }
+        .cart-sidebar.open { right: 0; }
+        .cart-header { padding: 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .cart-header h3 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; color: var(--valo-light); }
+        .close-cart { background: transparent; border: none; color: var(--valo-red); font-size: 28px; cursor: pointer; transition: 0.3s; font-family: 'Inter', sans-serif; }
+        .close-cart:hover { transform: scale(1.2) rotate(90deg); }
+        
+        .cart-items { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .cart-item { display: flex; align-items: center; gap: 15px; background: var(--valo-gray); padding: 15px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #333; transition: 0.3s;}
+        .cart-item:hover { border-color: var(--valo-red); }
+        .cart-item img { width: 70px; height: 70px; object-fit: contain; background: #111; border-radius: 4px; padding: 5px;}
+        .cart-item-info { flex-grow: 1; }
+        .cart-item-info h4 { margin: 0 0 5px 0; font-family: 'Rajdhani', sans-serif; font-size: 18px; text-transform: uppercase; }
+        .cart-item-info p { margin: 0; color: var(--valo-red); font-family: 'Share Tech Mono', monospace; font-size: 14px;}
+        .btn-remove { background: rgba(255, 70, 85, 0.1); border: 1px solid var(--valo-red); color: var(--valo-red); padding: 8px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .btn-remove:hover { background: var(--valo-red); color: white; }
+        
+        .cart-footer { padding: 25px; border-top: 1px solid #333; background: #0f1115; }
+        .cart-total { display: flex; justify-content: space-between; font-family: 'Bebas Neue', sans-serif; font-size: 28px; margin-bottom: 20px; letter-spacing: 1px;}
+        .cart-total span { color: var(--valo-red); }
+        .btn-checkout { width: 100%; background: var(--valo-red); color: white; border: none; padding: 15px; font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; transition: 0.3s; border-radius: 4px; }
+        .btn-checkout:hover { box-shadow: 0 0 20px rgba(255, 70, 85, 0.6); background: #fff; color: var(--valo-red); }
+
+        /* --- KILL BANNER NOTIFICATION --- */
+        #kill-banner { position: fixed; bottom: 50px; left: 50%; transform: translateX(-50%) scale(0.5); background: radial-gradient(circle, rgba(255,70,85,0.9) 0%, rgba(15,17,21,0.9) 80%); border: 2px solid var(--valo-red); padding: 15px 40px; border-radius: 5px; display: flex; align-items: center; gap: 15px; opacity: 0; pointer-events: none; z-index: 9999; box-shadow: 0 0 30px rgba(255, 70, 85, 0.6); transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #kill-banner.active { opacity: 1; transform: translateX(-50%) scale(1); }
+        #kill-banner img { width: 40px; filter: drop-shadow(0 0 5px #fff); }
+        #kill-banner h4 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 3px; color: #fff; text-shadow: 2px 2px 0 #000;}
+
+        /* --- HEADER --- */
+        header { position: relative; z-index: 100; background: rgba(15, 17, 21, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--valo-red); position: sticky; top: 0; transition: all 0.3s ease; }
+        header h1 { margin: 0; font-family: 'Bebas Neue', sans-serif; font-size: 42px; letter-spacing: 5px; color: var(--valo-light); display: flex; align-items: center;}
+        header h1 span.logo-highlight { color: var(--valo-red); }
+        .badge-fisico { background: var(--valo-red); color: #fff; padding: 6px 12px; font-size: 13px; font-family: 'Inter', sans-serif; font-weight: 700; letter-spacing: 2px; margin-left: 20px; align-self: center; border: 1px solid #fff;}
+        .carrito { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: bold; background: transparent; border: 2px solid var(--valo-red); color: var(--valo-red); padding: 10px 20px; transition: 0.3s; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,70,85,0.4);}
+        .carrito:hover { background: var(--valo-red); color: white; box-shadow: 0 0 15px rgba(255,70,85,0.6); }
+        .carrito.pulsar { animation: pulseGlow 0.5s ease-out; background: var(--valo-red); color: #fff; }
+
+        .hero-banner { height: 70vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: radial-gradient(circle at center, rgba(255,70,85,0.1) 0%, transparent 60%); border-bottom: 1px solid #333; position: relative; z-index: 2;}
+        .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: 80px; color: var(--valo-light); margin: 0; letter-spacing: 8px; position: relative; }
+        .hero-title::before, .hero-title::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--valo-dark); }
+        .hero-title::before { left: 2px; text-shadow: -2px 0 var(--valo-red); animation: glitch 3s infinite linear alternate-reverse; }
+        .hero-title::after { left: -2px; text-shadow: -2px 0 var(--valo-accent); animation: glitch 2s infinite linear alternate-reverse; }
+        .hero-subtitle { font-family: 'Rajdhani', sans-serif; font-size: 24px; color: #aaa; max-width: 600px; margin: 20px 0 40px 0; line-height: 1.5; text-shadow: 0 2px 4px #000;}
+        
+        /* --- NUEVO SISTEMA DE RESEÑAS (CARRUSEL DE TARJETAS) --- */
+        .reviews-container { position: relative; z-index: 2; padding: 40px 0; background: #0a0b0e; border-bottom: 1px solid #333; overflow: hidden; }
+        .reviews-title { text-align: center; font-family: 'Share Tech Mono', monospace; color: #666; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 30px; font-size: 14px;}
+        .reviews-track { display: flex; gap: 30px; width: max-content; animation: scrollCards 30s linear infinite; padding: 10px; }
+        .reviews-track:hover { animation-play-state: paused; }
+        .review-card { background: rgba(31, 35, 38, 0.8); backdrop-filter: blur(5px); border: 1px solid #333; border-left: 3px solid var(--valo-red); padding: 25px; border-radius: 8px; width: 350px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: 0.3s; }
+        .review-card:hover { transform: translateY(-5px); border-color: var(--valo-accent); box-shadow: 0 10px 25px rgba(0, 255, 204, 0.2); border-left-color: var(--valo-accent); }
+        .review-card .stars { color: #ffb700; margin-bottom: 10px; font-size: 18px; letter-spacing: 2px;}
+        .review-card p { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; color: #ccc; font-style: italic; margin-bottom: 15px; }
+        .review-card .author { font-family: 'Rajdhani', sans-serif; font-weight: bold; color: var(--valo-red); text-transform: uppercase; letter-spacing: 1px; font-size: 16px;}
+        @keyframes scrollCards { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .container { position: relative; z-index: 2; padding: 60px 40px; max-width: 1300px; margin: 0 auto; }
+        h2.section-title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; color: var(--valo-light); display: flex; align-items: center; margin-bottom: 40px; }
+        h2.section-title::before { content: ''; display: inline-block; width: 15px; height: 40px; background: var(--valo-red); margin-right: 20px; }
+        
+        .grid-productos { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; margin-bottom: 80px; }
+        .tarjeta-producto { background-color: var(--valo-gray); border: 1px solid #333; position: relative; display: flex; flex-direction: column; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); animation: fadeInUp 0.8s ease-out backwards; }
+        .tarjeta-producto:hover { transform: translateY(-15px); border-color: var(--valo-red); box-shadow: 0 20px 40px rgba(0,0,0,0.8); z-index: 10; }
+        .tag-ecommerce { position: absolute; top: 15px; left: -10px; background: var(--valo-red); color: white; font-family: 'Rajdhani', sans-serif; font-weight: 700; padding: 5px 15px; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; z-index: 5; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        .tag-ecommerce.limited { background: #ffb700; color: #000; }
+        .img-container { width: 100%; height: 260px; background: repeating-linear-gradient(45deg, #1f2326, #1f2326 10px, #1a1d21 10px, #1a1d21 20px); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; border-bottom: 1px solid #333; position: relative; }
+        .tarjeta-producto:hover .img-container { background: radial-gradient(circle, #3a1c1f 0%, #1f2326 100%); }
+        .img-container img { width: 90%; height: 90%; object-fit: contain; animation: float 6s ease-in-out infinite; transition: 0.5s; }
+        .tarjeta-producto:hover .img-container img { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 20px 15px rgba(255,70,85,0.4)); }
+        .info-producto { padding: 30px; display: flex; flex-direction: column; flex-grow: 1; background-color: var(--valo-dark); }
+        .escala { display: inline-block; color: var(--valo-red); font-family: 'Share Tech Mono', monospace; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; }
+        .info-producto h3 { margin: 0 0 15px 0; font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; }
+        .info-producto p { line-height: 1.6; color: #888; font-size: 15px; margin-bottom: 25px; flex-grow: 1; }
+        .precio-wrapper { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; border-top: 1px solid #333; padding-top: 20px; }
+        .precio { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: bold; color: var(--valo-light); }
+        .precio span { color: var(--valo-red); font-size: 16px; margin-left: 5px; }
+        .btn-comprar { background: var(--valo-gray); color: #fff; border: 1px solid #555; padding: 15px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: bold; width: 100%; transition: 0.3s ease; text-transform: uppercase; letter-spacing: 3px; }
+        .tarjeta-producto:hover .btn-comprar { background: var(--valo-red); border-color: var(--valo-red); box-shadow: 0 0 20px rgba(255,70,85,0.4); }
+
+        .secciones-extra { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; }
+        .banner-seccion { background: var(--valo-gray); border: 1px solid #333; padding: 40px; position: relative; box-sizing: border-box; }
+        .banner-seccion::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--valo-red); }
+        .banner-seccion h3 { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--valo-light); letter-spacing: 3px; margin: 0 0 30px 0; text-align: center; }
+        .img-seccion-principal { width: 100%; max-height: 300px; object-fit: cover; margin-bottom: 20px; border: 1px solid #444; filter: grayscale(50%); transition: 0.4s; }
+        .img-seccion-principal:hover { filter: grayscale(0%); border-color: var(--valo-red); }
+        .lista-campeones { list-style: none; padding: 0; margin: 0; }
+        .lista-campeones li { background: var(--valo-dark); margin-bottom: 15px; padding: 15px; border-left: 4px solid #444; display: flex; align-items: center; gap: 25px; transition: 0.3s; }
+        .lista-campeones li:hover { transform: translateX(10px); border-left-color: var(--valo-red); background: #181b21; }
+        .img-campeon { width: 160px; height: 90px; object-fit: cover; border: 1px solid #333; filter: grayscale(80%); transition: 0.3s; }
+        .lista-campeones li:hover .img-campeon { filter: grayscale(0%); border-color: var(--valo-red); }
+        .info-campeon { display: flex; flex-direction: column; }
+        .info-campeon span:first-child { color: var(--valo-accent); font-family: 'Rajdhani', sans-serif; font-weight: bold; font-size: 24px; letter-spacing: 1px; }
+        .roster { color: #888; font-size: 14px; margin-top: 5px; font-family: 'Share Tech Mono', monospace; }
+
+        .pro-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
+        .flip-card { background-color: transparent; height: 400px; perspective: 1000px; cursor: crosshair; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); transform-style: preserve-3d; }
+        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; -webkit-backface-visibility: hidden; backface-visibility: hidden; border: 1px solid #444; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; background: var(--valo-dark); }
+        .flip-card-front { justify-content: center; }
+        .flip-card-front h4 { font-family: 'Bebas Neue', sans-serif; font-size: 38px; color: var(--valo-light); margin: 15px 0 5px 0; letter-spacing: 2px; }
+        .flip-card-front span { color: var(--valo-red); font-size: 13px; font-family: 'Rajdhani', sans-serif; font-weight: bold; letter-spacing: 2px; text-transform: uppercase;}
+        .flip-card-front img { width: 120px; height: 120px; object-fit: cover; border-radius: 50%; margin-top: 15px; border: 2px solid var(--valo-red); filter: grayscale(20%); transition: 0.3s;}
+        .flip-card:hover .flip-card-front img { filter: grayscale(0%); }
+        .flip-card-back { background: linear-gradient(135deg, var(--valo-gray), var(--valo-dark)); color: white; transform: rotateY(180deg); padding: 25px; border-color: var(--valo-accent); justify-content: center; }
+        .flip-card-back h4 { font-family: 'Rajdhani', sans-serif; font-size: 24px; margin: 0 0 20px 0; border-bottom: 1px solid #444; padding-bottom: 15px; color: var(--valo-accent); text-transform: uppercase; letter-spacing: 2px;}
+        .dato-pro { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 12px; font-size: 14px; background: rgba(0,0,0,0.5); padding: 10px 15px; box-sizing: border-box; font-family: 'Share Tech Mono', monospace; border-left: 2px solid #333; transition: 0.3s; }
+        .dato-pro:hover { border-left-color: var(--valo-accent); background: rgba(0,255,204,0.05); }
+        .dato-pro span { color: #888; }
+        .dato-pro strong { color: var(--valo-light); text-align: right; width: 60%; line-height: 1.2;}
+
+        /* --- SPONSORS CORREGIDOS (LOGOS EN BLANCO) --- */
+        .seccion-sponsors { position: relative; z-index: 2; margin-top: 80px; padding: 60px 20px; background: #0a0b0e; border-top: 1px solid #222; border-bottom: 1px solid #222; text-align: center; }
+        .seccion-sponsors h3 { font-family: 'Rajdhani', sans-serif; color: #555; font-size: 18px; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 40px; }
+        .logos-sponsors { display: flex; justify-content: center; align-items: center; gap: 70px; flex-wrap: wrap; }
+        .logos-sponsors img { 
+            max-width: 150px; max-height: 50px; object-fit: contain; 
+            /* Filtro mágico: Convierte el logo a blanco brillante */
+            filter: brightness(0) invert(1) opacity(0.5); 
+            transition: all 0.4s ease; cursor: crosshair; 
+        }
+        .logos-sponsors img:hover { 
+            /* Al pasar el cursor recupera su color original */
+            filter: none; opacity: 1; transform: scale(1.1); 
+        }
+
+        @media (max-width: 1200px) { .secciones-extra { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<!-- INVENTARIO LATERAL (CARRITO) -->
+<div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+        <h3>TU ARSENAL</h3>
+        <button class="close-cart" onclick="toggleCart()">X</button>
+    </div>
+    <div id="cart-items" class="cart-items">
+        <!-- Los items se inyectan aquí con JavaScript -->
+        <p style="text-align: center; color: #666; font-family: 'Share Tech Mono'; margin-top: 50px;">MEMORIA VACÍA. <br>ADQUIERE EQUIPAMIENTO.</p>
+    </div>
+    <div class="cart-footer">
+        <div class="cart-total">TOTAL: <span id="cart-total-price">0 ARS</span></div>
+        <button class="btn-checkout" onclick="alert('Funcionalidad de pasarela de pago en desarrollo.')">PROCEDER AL PAGO</button>
+    </div>
+</div>
+
+<div id="particles-container"></div>
+
+<div id="kill-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 40px; height: 40px;"><path d="M12 2C8.686 2 6 4.686 6 8c0 3.314 2.686 6 6 6s6-2.686 6-6c0-3.314-2.686-6-6-6zM8 14l-2 6 3-1 3 3 3-3 3 1-2-6"></path></svg>
+    <h4>¡ARSENAL ASEGURADO!</h4>
+</div>
+
+<div id="audio-container" style="display: none;"></div>
+
+<!-- PANTALLA INICIAL -->
+<div id="splash-screen">
+    <h1 class="splash-logo">Radia<span>Store</span></h1>
+    <p style="color: #666; font-family: 'Share Tech Mono', monospace; margin-top: 15px; letter-spacing: 4px; text-transform: uppercase;">Iniciando Sistema || Echa por: Korovaichuk, Dilan Lautaro</p>
+    <button class="btn-ingresar" onclick="ingresarSitio()">Inicializar Interfaz</button>
+</div>
+
+<header>
+    <h1>Radia<span class="logo-highlight">Store</span> <span class="badge-fisico">PROPS & DECOR</span></h1>
+    <button class="carrito" id="cart-btn" onclick="toggleCart()">ARSENAL: <span id="cart-count">0</span> ITEMS</button>
+</header>
+
+<!-- BANNER HERO -->
+<section class="hero-banner">
+    <h2 class="hero-title glitch" data-text="EQUIPA TU SETUP">EQUIPA TU SETUP</h2>
+    <p class="hero-subtitle">El armamento más letal del protocolo VALORANT, ahora en el mundo físico. Impresión 3D táctica, ensamblaje modular y acabados hiperrealistas.</p>
+</section>
+
+<!-- NUEVA SECCIÓN DE RESEÑAS: CARRUSEL DE TARJETAS GLASSMORPHISM -->
+<div class="reviews-container">
+    <div class="reviews-title">[ REGISTROS DE USUARIOS ENCRIPTADOS ]</div>
+    <div class="reviews-track">
+        <!-- Tarjeta 1 -->
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p>"La Vandal Prime es idéntica a la in-game. El peso es perfecto y la pintura dorada brilla espectacular en mi setup. Calidad premium absoluta."</p>
+            <span class="author">USER_773</span>
+        </div>
+        <!-- Tarjeta 2 -->
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p>"Despliegue logístico perfecto. El trofeo Champions llegó a Chaco en caja reforzada. Queda hermoso junto a mis monitores."</p>
+            <span class="author">OMEN_MAIN</span>
+        </div>
+        <!-- Tarjeta 3 -->
+        <div class="review-card">
+            <div class="stars">★★★★☆</div>
+            <p>"Precisión milimétrica en los eslabones de la Kuronami. Tuve un pequeño retraso con el envío, pero la atención al cliente lo resolvió rápido."</p>
+            <span class="author">VIPER_01</span>
+        </div>
+        <!-- Tarjeta 4 -->
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p>"Materiales de grado militar para la Phantom Recon. Los rieles magnéticos para cambiar la mira son un detalle de locos."</p>
+            <span class="author">BRIMSTONE_X</span>
+        </div>
+        <!-- Tarjeta 5 -->
+        <div class="review-card">
+            <div class="stars">★★★★★</div>
+            <p>"La Vandal Araxys parece realmente tecnología alienígena. Las escamas están perfectamente detalladas. Vale cada centavo."</p>
+            <span class="author">KAYO_SYS</span>
+        </div>
+        <!-- Tarjetas Duplicadas para lograr el Scroll Infinito fluido -->
+        <div class="review-card"><div class="stars">★★★★★</div><p>"La Vandal Prime es idéntica a la in-game. El peso es perfecto y la pintura dorada brilla espectacular en mi setup. Calidad premium absoluta."</p><span class="author">USER_773</span></div>
+        <div class="review-card"><div class="stars">★★★★★</div><p>"Despliegue logístico perfecto. El trofeo Champions llegó a Chaco en caja reforzada. Queda hermoso junto a mis monitores."</p><span class="author">OMEN_MAIN</span></div>
+        <div class="review-card"><div class="stars">★★★★☆</div><p>"Precisión milimétrica en los eslabones de la Kuronami. Tuve un pequeño retraso con el envío, pero la atención al cliente lo resolvió rápido."</p><span class="author">VIPER_01</span></div>
+    </div>
+</div>
+
+<div class="container">
+    <h2 class="section-title">Catálogo Táctico // Escala 1:1</h2>
+    
+    <div class="grid-productos">
+        <div class="tarjeta-producto" style="animation-delay: 0.1s;">
+            <div class="tag-ecommerce">MÁS VENDIDO</div>
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-01-28172301.png?v=1769646266&width=800" alt="Vandal Prime"></div>
+            <div class="info-producto">
+                <span class="escala">ID: V-PRM-01 | Alta Densidad</span>
+                <h3>Vandal Prime</h3>
+                <p>Réplica física exacta con acabados en pintura dorada y violeta. Núcleo de energía simulado. Ideal para exhibición táctica.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">125.000<span>ARS</span></div>
+                </div>
+                <!-- LLAMADA AL ARREGLO DE JS -->
+                <button class="btn-comprar" onclick="agregarAlArsenal('V-PRM-01', 'Vandal Prime', 125000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-01-28172301.png?v=1769646266&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.2s;">
+            <div class="tag-ecommerce" style="background: #00ffcc; color: #000;">NUEVO INGRESO</div>
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2024-08-28180007_5d771bc4-ccad-49b9-93b8-0da94d59631f.png?v=1737880675&width=800" alt="Vandal Kuronami"></div>
+            <div class="info-producto">
+                <span class="escala">ID: V-KRN-02 | Resina Premium</span>
+                <h3>Vandal Kuronami</h3>
+                <p>Múltiples variantes de color disponibles. Diseño aerodinámico, texturas fieles al modelo in-game y eslabones modulares.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">140.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('V-KRN-02', 'Vandal Kuronami', 140000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2024-08-28180007_5d771bc4-ccad-49b9-93b8-0da94d59631f.png?v=1737880675&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.3s;">
+            <div class="img-container"><img src="https://makerworld.bblmw.com/makerworld/model/US4a5f65110827fd/design/2025-06-18_e16ac0fdcc0b38.jpg" alt="Phantom Recon"></div>
+            <div class="info-producto">
+                <span class="escala">ID: P-RCN-01 | Ensamblaje Modular</span>
+                <h3>Phantom Recon</h3>
+                <p>Aspecto táctico de infiltración. Incluye accesorios desmontables mediante rieles magnéticos (mira holográfica y empuñadura).</p>
+                <div class="precio-wrapper">
+                    <div class="precio">135.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('P-RCN-01', 'Phantom Recon', 135000, 'https://makerworld.bblmw.com/makerworld/model/US4a5f65110827fd/design/2025-06-18_e16ac0fdcc0b38.jpg')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.4s;">
+            <div class="tag-ecommerce limited">EDICIÓN LIMITADA</div>
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-01-28171000.png?v=1769645470&width=800" alt="Vandal Arcane"></div>
+            <div class="info-producto">
+                <span class="escala">ID: V-ARC-03 | Detalles Rústicos</span>
+                <h3>Vandal Arcane</h3>
+                <p>Forjada con estética Hextech. Detalles rústicos y diseño cruzado inspirado en el universo de Piltover y Zaun.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">160.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('V-ARC-03', 'Vandal Arcane', 160000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-01-28171000.png?v=1769645470&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.5s;">
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-04-13144728.png?v=1776113411&width=800" alt="Vandal Araxys"></div>
+            <div class="info-producto">
+                <span class="escala">ID: V-ARX-04 | Aleación / PLA</span>
+                <h3>Vandal Araxys</h3>
+                <p>Estructura de origen desconocido con escamas acorazadas. Pintura metalizada de alta resistencia al desgaste.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">145.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('V-ARX-04', 'Vandal Araxys', 145000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2026-04-13144728.png?v=1776113411&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.6s;">
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-04-17122746.png?v=1744914493&width=800" alt="Phantom Nocturnum"></div>
+            <div class="info-producto">
+                <span class="escala">ID: P-NCT-02 | Resina Oscura</span>
+                <h3>Phantom Nocturnum</h3>
+                <p>Detalles lúgubres y acabados negro mate absorbentes de luz. Incluye grabados precisos extraídos de los archivos originales.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">138.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('P-NCT-02', 'Phantom Nocturnum', 138000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-04-17122746.png?v=1744914493&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.7s;">
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2024-12-05155116.png?v=1754079108&width=800" alt="Vandal Neptune"></div>
+            <div class="info-producto">
+                <span class="escala">ID: V-NPT-05 | Resina Epoxi</span>
+                <h3>Vandal Neptune</h3>
+                <p>Simulación del ecosistema acuático interno mediante encapsulado multicapa en resina transparente. Pieza de colección única.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">155.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('V-NPT-05', 'Vandal Neptune', 155000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2024-12-05155116.png?v=1754079108&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.8s;">
+            <div class="tag-ecommerce limited">VCT EXCLUSIVE</div>
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-08-01123416.png?v=1754079021&width=800" alt="Katana Champions 2024"></div>
+            <div class="info-producto">
+                <span class="escala">ID: M-KTC-24 | Acero Inoxidable</span>
+                <h3>Katana Champions 2024</h3>
+                <p>Réplica escala 1:1 del arma cuerpo a cuerpo conmemorativa del mundial en Seúl. Hoja sin filo diseñada para exhibición segura.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">180.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('M-KTC-24', 'Katana Champions 2024', 180000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-08-01123416.png?v=1754079021&width=800')">Adquirir</button>
+            </div>
+        </div>
+
+        <div class="tarjeta-producto" style="animation-delay: 0.9s;">
+            <div class="tag-ecommerce limited">VCT EXCLUSIVE</div>
+            <div class="img-container"><img src="https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-10-21143734.png?v=1761079161&width=800" alt="Trofeo Champions 2023"></div>
+            <div class="info-producto">
+                <span class="escala">ID: T-CMP-23 | Metal Fundido</span>
+                <h3>Trofeo Champions 2023</h3>
+                <p>Réplica pesada escala 1:2 del trofeo mundial de Los Ángeles. Baño dorado y base grabada con láser portando la insignia VCT.</p>
+                <div class="precio-wrapper">
+                    <div class="precio">210.000<span>ARS</span></div>
+                </div>
+                <button class="btn-comprar" onclick="agregarAlArsenal('T-CMP-23', 'Trofeo Champions 2023', 210000, 'https://cdn.shopify.com/s/files/1/0630/0149/3640/files/Screenshot2025-10-21143734.png?v=1761079161&width=800')">Adquirir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIONES EXTRA -->
+    <div class="secciones-extra">
+        <div class="banner-seccion">
+            <h3>Archivos Históricos: VCT Champions</h3>
+            <ul class="lista-campeones">
+                <li>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/7/7f/Valorant_Acend_ValorantChampions2021_winners_2-1024x576.jpg" alt="Equipo ACEND 2021" class="img-campeon">
+                    <div class="info-campeon">
+                        <span>2021 | ACEND</span>
+                        <span class="roster">starxo | cNed | zeek | BONECOLD | Kiles</span>
+                    </div>
+                </li>
+                <li>
+                    <img src="https://cdn-62cb22a2c1ac1835ecef9f37.closte.com/wp-content/uploads/2022/09/vct-loud-campema-2022-champions.jpg" alt="Equipo LOUD 2022" class="img-campeon">
+                    <div class="info-campeon">
+                        <span>2022 | LOUD</span>
+                        <span class="roster">Sacy | saadhak | Less | pANcada | aspas</span>
+                    </div>
+                </li>
+                <li>
+                    <img src="https://a.espncdn.com/combiner/i?img=%2Fphoto%2F2023%2F0827%2Fr1216182_1296x729_16%2D9.jpg&w=920&h=518&scale=crop&cquality=80&location=origin&format=jpg" alt="Equipo Evil Geniuses 2023" class="img-campeon">
+                    <div class="info-campeon">
+                        <span>2023 | EVIL GENIUSES</span>
+                        <span class="roster">demon1 | jawgemo | Boostio | C0M | Ethan</span>
+                    </div>
+                </li>
+                <li>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/Edward-gaming-win-valorant-champions-2024.jpg" alt="Equipo EDward Gaming 2024" class="img-campeon">
+                    <div class="info-campeon">
+                        <span>2024 | EDward Gaming</span>
+                        <span class="roster">ZmjjKK | CHICHOO | Smoggy | S1Mon | nobody</span>
+                    </div>
+                </li>
+                <li>
+                    <img src="https://esportsinsider.com/wp-content/uploads/2025/10/NRG_VALORANT_Champions_2025_trophy-medium_large.jpg" alt="Equipo NRG 2025" class="img-campeon">
+                    <div class="info-campeon">
+                        <span>2025 | NRG</span>
+                        <span class="roster">brawk | Ethan | skuba | mada | s0m</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div>
+            <div class="banner-seccion" style="text-align: center; margin-bottom: 40px; padding: 0; overflow: hidden; border: none;">
+                <div style="background: var(--valo-red); padding: 15px;">
+                    <h3 style="margin: 0; color: white;">Alianza Estratégica: KRÜ Esports</h3>
+                </div>
+                <img src="https://store.kruesports.gg/cdn/shop/files/IMG_0287.png?v=1775680047&width=3840.jpg" alt="KRÜ Esports" style="width: 100%; object-fit: cover; display: block; filter: brightness(80%);">
+            </div>
+
+            <div class="banner-seccion" style="border-top-color: var(--valo-accent); background: #0f1418;">
+                <h3 style="color: var(--valo-accent); text-shadow: 0 0 15px rgba(0, 255, 204, 0.3);">Base de Datos: Agentes Profesionales</h3>
+                <p style="color: #666; font-family: 'Share Tech Mono', monospace; text-align: center; margin-bottom: 30px; font-size: 13px; text-transform: uppercase;">[ Mover para desencriptar configuración ]</p>
+                
+                <div class="pro-grid">
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Duelista / LATAM / ENVY</span><h4>Keznit</h4><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRUM9p3lOSs3unmycXCWolhkkd2Wv8YjAFttw&s" alt="Keznit"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>Angelo Mori</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.346</strong></div><div class="dato-pro"><span>DPI:</span> <strong>800</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>2000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>14/08/2001</strong></div><div class="dato-pro"><span>País:</span> <strong>Chile</strong></div></div></div></div>
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Duelista / BR / MIBR</span><h4>aspas</h4><img src="https://i.ytimg.com/vi/fpB5jR3M520/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLBHEtAPPM9Rn2_4dZsXpKssVepo9g" alt="Aspas"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>Erick Santos</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.37</strong></div><div class="dato-pro"><span>DPI:</span> <strong>800</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>4000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>15/06/2003</strong></div><div class="dato-pro"><span>País:</span> <strong>Brasil</strong></div></div></div></div>
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Flex / BR / KRÜ</span><h4>Less</h4><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTi6DG0JWJStzd7dgCLS2--SoDFG1nlW-7qVw&s" alt="Less"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>Felipe Basso</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.32</strong></div><div class="dato-pro"><span>DPI:</span> <strong>800</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>4000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>24/02/2005</strong></div><div class="dato-pro"><span>País:</span> <strong>Brasil</strong></div></div></div></div>
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Flex / NA / 100 THIEVES</span><h4>Cryocells</h4><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQs-eLmwT_IyUktTIOll-zAQ-hANqLbu3nDJA&s" alt="Cryocells"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>M. Panganiban</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.16</strong></div><div class="dato-pro"><span>DPI:</span> <strong>800</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>8000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>22/12/2002</strong></div><div class="dato-pro"><span>País:</span> <strong>EE.UU.</strong></div></div></div></div>
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Flex / APAC / PAPER REX</span><h4>f0rsakeN</h4><img src="https://pbs.twimg.com/media/HDUXlecXsAAHzd4.jpg" alt="f0rsakeN"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>Jason Susanto</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.645</strong></div><div class="dato-pro"><span>DPI:</span> <strong>800</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>4000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>25/03/2004</strong></div><div class="dato-pro"><span>País:</span> <strong>Indonesia</strong></div></div></div></div>
+                    <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><span>Duelista / APAC / PAPER REX</span><h4>Jinggg</h4><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJbcBFjZM9xHioaEWBvcCGODN5yAfkNRepAw&s" alt="Jinggg"></div><div class="flip-card-back"><h4>System_Config</h4><div class="dato-pro"><span>Nombre:</span> <strong>Wang Jing Jie</strong></div><div class="dato-pro"><span>Sens:</span> <strong>0.175</strong></div><div class="dato-pro"><span>DPI:</span> <strong>1600</strong></div><div class="dato-pro"><span>Hz mouse:</span> <strong>2000</strong></div><div class="dato-pro"><span>Nacimiento:</span> <strong>29/07/2003</strong></div><div class="dato-pro"><span>País:</span> <strong>Singapur</strong></div></div></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="seccion-sponsors">
+    <h3>Corporaciones Aliadas</h3>
+    <div class="logos-sponsors">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/RED_BULL_LOGO_2026.svg/3840px-RED_BULL_LOGO_2026.svg.png" alt="RedBull">
+        <img src="https://logodownload.org/wp-content/uploads/2018/03/logitech-logo-9.png" alt="Logitech">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/Transparent_SecretLab_Logo%28black_font%29%281%29.png" alt="SecretLab">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/64/Intel-logo-2022.png" alt="Intel">
+    </div>
+</div>
+
+<script>
+    // --- ESTUCTURA DE DATOS: ARREGLO EN MEMORIA INTERNA ---
+    let inventarioArreglo = [];
+
+    function crearParticulas() {
+        const container = document.getElementById('particles-container');
+        setInterval(() => {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.animationDuration = Math.random() * 3 + 2 + 's';
+            particle.style.opacity = Math.random();
+            container.appendChild(particle);
+            setTimeout(() => { particle.remove(); }, 5000);
+        }, 150);
+    }
+
+    function ingresarSitio() {
+        const iframeSoundCloud = '<iframe width="0" height="0" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/sasasa-339853299/all-valorant-champions-song&color=%23ff5500&auto_play=true&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false"></iframe>';
+        document.getElementById('audio-container').innerHTML = iframeSoundCloud;
+
+        const splash = document.getElementById('splash-screen');
+        splash.style.opacity = '0';
+        splash.style.transform = 'scale(1.1)'; 
+        document.body.style.overflowY = 'auto';
+
+        crearParticulas(); 
+        setTimeout(() => { splash.style.display = 'none'; }, 800);
+    }
+
+    // --- ALGORITMOS DEL INVENTARIO (CARRITO) ---
+
+    // Abrir/Cerrar Panel
+    function toggleCart() {
+        const sidebar = document.getElementById('cart-sidebar');
+        sidebar.classList.toggle('open');
+    }
+
+    // Carga de Registro al Arreglo
+    function agregarAlArsenal(cod, nombre, precio, img) {
+        // Se añade un nuevo objeto al final del arreglo
+        inventarioArreglo.push({ codigo: cod, nombre: nombre, precio: precio, imagen: img });
+        
+        actualizarInterfazInventario();
+
+        const btnCarrito = document.getElementById('cart-btn');
+        const killBanner = document.getElementById('kill-banner');
+        
+        btnCarrito.classList.add('pulsar');
+        killBanner.classList.add('active');
+        
+        setTimeout(() => { btnCarrito.classList.remove('pulsar'); }, 500);
+        setTimeout(() => { killBanner.classList.remove('active'); }, 2000); 
+    }
+
+    // Eliminación de Registro del Arreglo
+    function removerDelArsenal(indice) {
+        // Se elimina 1 elemento en la posición 'indice'
+        inventarioArreglo.splice(indice, 1);
+        actualizarInterfazInventario();
+    }
+
+    // Proceso de Listado y Sumatoria (Recorrido del Arreglo)
+    function actualizarInterfazInventario() {
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartCount = document.getElementById('cart-count');
+        const cartTotalPrice = document.getElementById('cart-total-price');
+        
+        cartItemsContainer.innerHTML = ''; // Limpiamos la vista
+        let sumaTotal = 0;
+
+        // Actualizamos el contador en el header
+        cartCount.innerText = inventarioArreglo.length;
+
+        if (inventarioArreglo.length === 0) {
+            cartItemsContainer.innerHTML = '<p style="text-align: center; color: #666; font-family: \'Share Tech Mono\'; margin-top: 50px;">MEMORIA VACÍA. <br>ADQUIERE EQUIPAMIENTO.</p>';
+            cartTotalPrice.innerText = '0 ARS';
+            return;
+        }
+
+        // Recorrido secuencial del arreglo
+        for (let i = 0; i < inventarioArreglo.length; i++) {
+            const item = inventarioArreglo[i];
+            sumaTotal += item.precio;
+
+            // Inyección de HTML dinámico
+            cartItemsContainer.innerHTML += `
+                <div class="cart-item">
+                    <img src="${item.imagen}" alt="${item.nombre}">
+                    <div class="cart-item-info">
+                        <h4>${item.nombre}</h4>
+                        <p>${item.precio.toLocaleString('es-AR')} ARS</p>
+                    </div>
+                    <button class="btn-remove" onclick="removerDelArsenal(${i})" title="Eliminar Registro">X</button>
+                </div>
+            `;
+        }
+
+        // Actualizamos el precio total formateado
+        cartTotalPrice.innerText = sumaTotal.toLocaleString('es-AR') + ' ARS';
+    }
+</script>
+
+</body>
+</html>
